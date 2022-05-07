@@ -49,8 +49,9 @@ class Player extends AcGameObject {
             } else if (e.which === 1) {
                 if (outer.cur_skill === "fireball") {
                     outer.shoot_fireball(e.clientX - rect.left, e.clientY - rect.top);
+                }else if(outer.cur_skill === "flash"){
+                    outer.flash_to(e.clientX - rect.left,e.clientY - rect.top);
                 }
-
                 outer.cur_skill = null;
             }
         });
@@ -58,6 +59,10 @@ class Player extends AcGameObject {
         $(window).keydown(function(e) {
             if (e.which === 81) {  // q
                 outer.cur_skill = "fireball";
+                return false;
+            }
+            if(e.which === 70) {
+                outer.cur_skill = "flash";
                 return false;
             }
         });
@@ -69,9 +74,29 @@ class Player extends AcGameObject {
         let angle = Math.atan2(ty - this.y, tx - this.x);
         let vx = Math.cos(angle), vy = Math.sin(angle);
         let color = "orange";
-        let speed = this.playground.height * 0.5;
+        let speed = this.playground.height * 0.65;
         let move_length = this.playground.height * 1;
         new FireBall(this.playground, this, x, y, radius, vx, vy, color, speed, move_length, this.playground.height * 0.01);
+    }
+
+    flash_to(tx,ty) {
+        let x = this.x, y = this.y; 
+        let angle = Math.atan2(ty - this.y, tx - this.x);
+        let move_length = this.playground.height * 0.2;
+        let vx = Math.cos(angle), vy = Math.sin(angle);
+        this.x += move_length * vx;
+        this.y += move_length *vy;
+        this.move_length -= move_length;
+        for (let i = 0; i < 20 + Math.random() * 10; i ++ ) {
+            let x = this.x, y = this.y;
+            let radius = this.radius * Math.random() * 0.1;
+            let angle = Math.PI * 2 * Math.random();
+            let vx = Math.cos(angle), vy = Math.sin(angle);
+            let color = this.color;
+            let speed = this.speed * 8;
+            let move_length = this.radius * Math.random() * 5;
+            new Particle(this.playground, x, y, radius, vx, vy, color, speed, move_length);
+        }
     }
 
     get_dist(x1, y1, x2, y2) {
