@@ -97,7 +97,7 @@ class Settings {
         this.$register_error_message = this.$register.find(".ac-game-settings-error-message");
         this.$register_login = this.$register.find(".ac-game-settings-option");
 
-        this.$login.hide();
+        this.$register.hide();
 
         this.root.$ac_game.append(this.$settings);
         this.start();
