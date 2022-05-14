@@ -6,11 +6,9 @@ from django.core.cache import cache  # 这个cache可以理解为一个字典
 class MultiPlayer(AsyncWebsocketConsumer):
     async def connect(self):  # 当前端通过刚才的链接与我们建立连接时，执行这个函数
         await self.accept() # 建立连接
-        print('accept')
 
 
     async def disconnect(self, close_code):
-        print('disconnect')
         await self.channel_layer.group_discard(self.room_name,self.channel_name)
 
 
@@ -116,6 +114,17 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }
         )
 
+    async def message(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "message",
+                'uuid': data['uuid'],
+                'username': data['username'],
+                'text': data['text'],
+            }
+        )
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -130,4 +139,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
             await self.attack(data)
         elif event == "flash":
             await self.flash(data)
-        print(data)
+        elif event == "message":
+            await self.message(data)
+
