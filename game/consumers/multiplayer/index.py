@@ -5,8 +5,22 @@ from django.core.cache import cache  # 这个cache可以理解为一个字典
 
 class MultiPlayer(AsyncWebsocketConsumer):
     async def connect(self):  # 当前端通过刚才的链接与我们建立连接时，执行这个函数
+        await self.accept() # 建立连接
+        print('accept')
+
+
+    async def disconnect(self, close_code):
+        print('disconnect')
+        await self.channel_layer.group_discard(self.room_name,self.channel_name)
+
+
+
+
+    async def create_player(self, data): # 从新玩家前端接受信息，添加到房间的玩家列表，并发送给组里每一个老玩家
         self.room_name = None
-        for i in range(1000):
+        start = 0
+        
+        for i in range(start, 1000):
             name = "room_%d" % (i)
             if not cache.has_key(name) or len(cache.get(name)) < settings.ROOM_CAPACITY:
                 self.room_name = name
@@ -14,11 +28,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
 
         if not self.room_name:
             return
-
-
-        await self.accept() # 建立连接
-        print('accept')
-
+        
         if not cache.has_key(self.room_name):
             cache.set(self.room_name, [], 3600) # 一小时有效期
 
@@ -30,17 +40,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
                     'photo':  player['photo'],
                 }))
         await self.channel_layer.group_add(self.room_name, self.channel_name)
-
-
-
-    async def disconnect(self, close_code):
-        print('disconnect')
-        await self.channel_layer.group_discard(self.room_name,self.channel_name)
-
-
-
-
-    async def create_player(self, data): # 从新玩家前端接受信息，添加到房间的玩家列表，并发送给组里每一个老玩家
+        
         players = cache.get(self.room_name)
         players.append({
             'uuid': data['uuid'],
@@ -51,7 +51,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(
             self.room_name,
             {
-                'type': "group_create_player",
+                'type': "group_send_event",
                 'event': "create_player",
                 'uuid': data['uuid'],
                 'username': data['username'],
@@ -60,13 +60,74 @@ class MultiPlayer(AsyncWebsocketConsumer):
         )
 
     
-    async def group_create_player(self, data):
+    async def group_send_event(self, data):
         await self.send(text_data=json.dumps(data))
+
+
+    async def move_to(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "move_to",
+                'uuid': data['uuid'],
+                'tx': data['tx'],
+                'ty': data['ty'],
+            }
+        )
+
+    async def shoot_fireball(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "shoot_fireball",
+                'uuid': data['uuid'],
+                'tx': data['tx'],
+                'ty': data['ty'],
+                'ball_uuid': data['ball_uuid'],
+            }
+        )
+
+    async def attack(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "attack",
+                'uuid': data['uuid'],
+                'attackee_uuid': data['attackee_uuid'],
+                'x': data['x'],
+                'y': data['y'],
+                'angle': data['angle'],
+                'damage': data['damage'],
+                'ball_uuid': data['ball_uuid'],
+            }
+        )
+    async def flash(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "flash",
+                'uuid': data['uuid'],
+                'tx': data['tx'],
+                'ty': data['ty'],
+            }
+        )
 
 
     async def receive(self, text_data):
         data = json.loads(text_data)
         event = data['event']
-        if event == 'create_player':
+        if event == "create_player":
             await self.create_player(data)
+        elif event == "move_to":
+            await self.move_to(data)
+        elif event == "shoot_fireball":
+            await self.shoot_fireball(data)
+        elif event == "attack":
+            await self.attack(data)
+        elif event == "flash":
+            await self.flash(data)
         print(data)

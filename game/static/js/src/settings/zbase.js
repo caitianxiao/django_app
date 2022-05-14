@@ -225,7 +225,6 @@ class Settings {
                 platform: outer.platform,
             },
             success : function(resp) {
-                console.log(resp);
                 if(resp.result === "success") {
                     outer.username = resp.username;
                     outer.photo = resp.photo;
