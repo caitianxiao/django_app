@@ -26,7 +26,7 @@ def register(request):
     user = User(username = username)
     user.set_password(password)
     user.save()
-    Player.objects.create(user=user,photo="http://pic.3h3.com/up/2013-11/2013111124241043464994.jpg")
+    Player.objects.create(user=user,photo="http://pic.3h3.com/up/2013-11/2013111124241043464994.jpg", score=1500)
     login(request, user)
     return JsonResponse({
         'result' : "success",
