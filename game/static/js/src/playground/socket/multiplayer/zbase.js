@@ -40,7 +40,7 @@ class MultiPlayerSocket {
             'event': "create_player",
             'uuid': outer.uuid,
             'username': username,
-            'photo' : photo
+            'photo' : photo,
         }));
     }
 
